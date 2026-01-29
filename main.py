@@ -1,29 +1,32 @@
 import tyro
-import yaml
 import ray.tune.schedulers as schedulers
 import ray.tune as tune
 import ray
 from ray.runtime_env import RuntimeEnv
 from pathlib import Path
 from dotenv import get_key
+from loguru import logger
 
 
 from src.config import Config
 from src.pipeline import pipeline
-from src.utils import build_search_space, prefill_pipeline
+from src.utils import build_search_space, prefill_pipeline, timer
 
+
+@logger.catch()
+@timer
 def main():
     config = tyro.cli(Config)
     if config.env.local:
         pipeline(config)
         return
     ray.init(
-        address=get_key(".env","RAY_ADDRESS"),
+        address=get_key(".env", "RAY_ADDRESS"),
         runtime_env=RuntimeEnv(
             env_vars=dict(
-                WANDB_API_KEY=get_key(".env","WANDB_API_KEY"),
+                WANDB_API_KEY=get_key(".env", "WANDB_API_KEY"),
                 UV_LINK_MODE="copy",
-                VIRTUAL_ENV=".venv"
+                VIRTUAL_ENV=".venv",
             ),
             working_dir=str(Path(__file__).resolve().parent),
             # https://docs.ray.io/en/latest/ray-core/handling-dependencies.html#runtime-environments
@@ -31,18 +34,22 @@ def main():
                 "/data/",
                 "/.venv/",
                 "/__pycache__/",
-            ]
-        )
+            ],
+        ),
     )
     if not config.tune.search_space:
-        ray.get(ray.remote(pipeline).remote(config))
+        ray.get(
+            ray.remote(pipeline)
+            .options(num_cpus=config.env.num_cpus, num_gpus=config.env.num_gpus)
+            .remote(config)
+        )
     else:
         Scheduler = getattr(schedulers, config.tune.scheduler)
         scheduler = Scheduler(max_t=config.tune.max_t)
-        prefilled_pipeline = prefill_pipeline(pipeline,config)
+        prefilled_pipeline = prefill_pipeline(pipeline, config)
         pipeline_with_resources = tune.with_resources(
             prefilled_pipeline,
-            dict(cpu=config.tune.cpu_per_trial,gpu=config.tune.gpu_per_trial)
+            dict(cpu=config.tune.cpu_per_trial, gpu=config.tune.gpu_per_trial),
         )
         search_space = build_search_space(config.tune.search_space)
         tune_pipeline = tune.Tuner(
@@ -55,13 +62,11 @@ def main():
                 search_alg=config.tune.search_algorithm,
                 scheduler=scheduler,
             ),
-            run_config=tune.RunConfig(
-            )
+            run_config=tune.RunConfig(),
         )
         tune_pipeline.fit()
 
     ray.shutdown()
-
 
 
 if __name__ == "__main__":
