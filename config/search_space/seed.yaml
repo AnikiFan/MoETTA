@@ -1,0 +1,6 @@
+train.seed:
+  type: choices
+  values: 
+    - 42
+    - 4242
+    - 424242

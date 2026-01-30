@@ -8,7 +8,7 @@ from torch.utils.data.dataset import Subset
 import timm
 from loguru import logger
 
-from ..config import Config
+from config import Config
 from .ImageNetMask import r_to_origin, a_to_origin
 
 COMMON_CORRUPTIONS_15 = [
@@ -61,13 +61,13 @@ def get_data(corruption, config: Config):
     match corruption:
         case "original":
             test_set = ImageFolder(
-                root=os.path.join(os.path.expanduser(config.env.data), "val"),
+                root=os.path.join(os.path.expanduser(config.env.original_data_path), "val"),
                 transform=test_transforms,
             )
         case corruption if corruption in COMMON_CORRUPTIONS:
             test_set = ImageFolder(
                 root=os.path.join(
-                    os.path.expanduser(config.env.data_corruption),
+                    os.path.expanduser(config.env.corruption_data_path),
                     corruption,
                     str(config.data.level),
                 ),
@@ -75,18 +75,18 @@ def get_data(corruption, config: Config):
             )
         case "rendition":
             test_set = ImageFolder(
-                root=os.path.expanduser(config.env.data_rendition),
+                root=os.path.expanduser(config.env.rendition_data_path),
                 transform=test_transforms,
                 target_transform=lambda idx: r_to_origin[idx],
             )
         case "sketch":
             test_set = datasets.ImageFolder(
-                root=os.path.expanduser(config.env.data_sketch),
+                root=os.path.expanduser(config.env.sketch_data_path),
                 transform=test_transforms,
             )
         case "imagenet_a":
             test_set = datasets.ImageFolder(
-                root=os.path.expanduser(config.env.data_adv),
+                root=os.path.expanduser(config.env.adv_data_path),
                 transform=test_transforms,
                 target_transform=lambda idx: a_to_origin[idx],
             )
@@ -125,7 +125,7 @@ def prepare_test_data(config: Config):
                 test_set = Subset(
                     test_set, torch.randperm(len(test_set))[: config.data.used_data_num]
                 )
-        case "potpourris":
+        case "potpourri":
             dataset_list = [
                 get_data(corruption, config) for corruption in COMMON_CORRUPTIONS_15
             ]
@@ -133,7 +133,7 @@ def prepare_test_data(config: Config):
             dataset_list.append(get_data("sketch", config))
             dataset_list.append(get_data("imagenet_a", config))
             test_set = torch.utils.data.ConcatDataset(dataset_list)  # 合并多个dataset
-        case "potpourris+":
+        case "potpourri+":
             dataset_list = [
                 get_data(corruption, config) for corruption in COMMON_CORRUPTIONS_15
             ]

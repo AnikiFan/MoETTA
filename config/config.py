@@ -1,7 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 from pathlib import Path
 
+from . import CONFIG
 
 @dataclass
 class EnvironmentConfig:
@@ -14,25 +15,19 @@ class EnvironmentConfig:
     tags: tuple[str] = ()
     local: bool = False
     notes: str = ""
-    job_type: str = "train"
+    job_type: Literal["train","test","debug", "pilot-exp"] = "train"
     wandb_mode: Literal["online", "offline", "disabled", "shared"] = "online"
-    data: Path = Path("~/workspace/MoETTA/data/imagenet-1k_2012")
-    data_sketch: Path = Path("~/workspace/MoETTA/data/imagenet-sketch/sketch")
-    data_adv: Path = Path("~/workspace/MoETTA/data/imagenet-a")
-    data_v2: Path = Path("~/workspace/MoETTA/data/imagenetv2")
-    data_corruption: Path = Path("~/workspace/MoETTA/data/imagenet-c")
-    data_rendition: Path = Path("~/workspace/MoETTA/data/imagenet-r")
-    data_cifar100_c: Path = Path("~/workspace/MoETTA/data/cifar100-c")
-    data_cifar10_c: Path = Path("~/workspace/MoETTA/data/cifar10-c")
-
+    original_data_path: Path = Path("~/workspace/MoETTA/data/imagenet-1k_2012")
+    sketch_data_path: Path = Path("~/workspace/MoETTA/data/imagenet-sketch/sketch")
+    adv_data_path: Path = Path("~/workspace/MoETTA/data/imagenet-a")
+    corruption_data_path: Path = Path("~/workspace/MoETTA/data/imagenet-c")
+    rendition_data_path: Path = Path("~/workspace/MoETTA/data/imagenet-r")
 
 @dataclass
 class TrainingConfig:
-    optimizer: Literal["SGD", "AdamW"] = "SGD"
     batch_size: int = 64
     seed: int = 42
     workers: int = 8
-    ray_tune_config: Path = ""
 
 
 @dataclass
@@ -82,8 +77,8 @@ class DataConfig:
         "spatter",
         "gaussian_blur",
         "saturate",
-        "potpourris",
-        "potpourris+",
+        "potpourri",
+        "potpourri+",
         "cifar10-c",
         "cifar100-c",
     ] = "imagenet_c_test_mix"
@@ -91,21 +86,21 @@ class DataConfig:
 
 @dataclass
 class BECoTTAConfig:
-    lr: float = 0.001
+    lr: float = 1e-5
     expert_num: int = 6
-    MoE_hidden_dim: int = 2
-    num_k: int = 6
+    MoE_hidden_dim: int = 1
+    num_k: int = 1
     domain_num: int = 1
 
 
 @dataclass
 class MGTTAConfig:
+    lr: float = 3e-4
     mgg_path: Path = Path("~/workspace/MoETTA/artifacts/mgg_ckpt.pth")
     ttt_hidden_size: int = 8
     num_attention_heads: int = 1
     norm_dim: int = 768
     train_info_path: Path = Path("~/workspace/MoETTA/artifacts/train_info.pt")
-    lr: float = 0.001
 
 
 @dataclass
@@ -115,14 +110,14 @@ class CoTTAConfig:
 
 @dataclass
 class SARConfig:
-    lr: float = 0.001
+    lr: float = 5e-4
     margin_e0_coeff: float = 0.4
     reset_constant_em: float = 0.005
 
 
 @dataclass
 class DeYOConfig:
-    lr: float = 0.001
+    lr: float = 5e-5
     margin_coeff: float = 0.4
     margin_e0_coeff: float = 0.5
     filter_ent: bool = True
@@ -134,12 +129,12 @@ class DeYOConfig:
     occulusion_size: int = 112
     row_start: int = 56
     column_start: int = 56
-    plpd_threshold: float = 0.2
+    plpd_threshold: float = 0.5
 
 
 @dataclass
 class EATAConfig:
-    lr: float = 0.001
+    lr: float = 6e-4
     fisher_size: int = 2000
     fisher_alpha: float = 2000.0
     e_margin_coeff: float = 0.4
@@ -148,7 +143,7 @@ class EATAConfig:
 
 @dataclass
 class TentConfig:
-    lr: float = 0.001
+    lr: float = 5e-4
 
 
 @dataclass
@@ -158,50 +153,35 @@ class MoETTAConfig:
     randomness: float = 0.0
     """Ratio of expert random initialization norm to pretrained parameter norm."""
 
-    num_expert: int = 10
+    num_expert: int = 9
     """Number of experts."""
 
-    topk: int = 5
+    topk: int = 1
     """Number of activated experts."""
 
     route_penalty: float = 0.0
     """Constant used in DeepseekV3 loss-free routing balancing method."""
 
-    weight_by_prob: bool = False
+    weight_by_prob: bool = True
     """Whether to use normalized router softmax values as coefficients during expert fusion. If False, use uniform coefficients."""
 
-    shared_expert: bool = False
+    activate_shared_expert: bool = False
     """Whether to train shared experts, i.e., whether to train pretrained parameters."""
 
-    ethr_coeff: float = 1.0
-    """Coefficient used for entropy filtering threshold."""
-
-    lb_coeff: float = 1.0
+    lb_coeff: float = 0.2
     """Coefficient before load balancing loss."""
 
     decay: float = 0.0
     """Decay coefficient for route_penalty."""
 
     self_router: bool = True
-    """Whether to have a router for each LN."""
+    """Whether to have a router for each MoE-Normalization."""
 
-    weight_by_entropy: bool = False
+    weight_by_entropy: bool = True
     """Whether to weight by entropy."""
-
-    e_margin_coeff: float = 0.4
-    """Bias term coefficient in entropy weighting."""
-
-    clip_grad: bool = False
-    """Whether to clip gradients."""
 
     grad_hook: bool = False
     """Whether to log gradient norm information to wandb."""
-
-    expert_grad_clip: float = 1.5
-    """Threshold for clipping expert gradients."""
-
-    router_grad_clip: float = 1.5
-    """Threshold for clipping router gradients."""
 
     dynamic_threshold: bool = True
     """Whether to use dynamic thresholding."""
@@ -209,45 +189,44 @@ class MoETTAConfig:
     samplewise: bool = True
     """Whether to route on a per-sample basis."""
 
-    log_matrix_step: int = 100
+    log_matrix_step: int = 10000
     """Step interval for logging matrices."""
 
     disabled_layer: str = ""
+    """Index of Normalization Layers that are not replaced by MoE-Normalization and keep frozen, e.g., "0,2,4" or "0-3"."""
 
     normal_layer: str = ""
+    """Index of Normalization Layers that are not replaced by MoE-Normalization and keep activated, e.g., "0,2,4" or "0-3"."""
 
     pass_through_coeff: bool = True
 
-    log_detail: bool = False
-
-    early_stop: bool = False
-
     dynamic_lb: bool = True
 
-    global_router_idx: float = -1.0
+    global_router_idx: int = -1
 
     def __post_init__(self):
-        self.disabled_layer = (
-            list(range(int(self.disabled_layer.split('-')[0]), int(self.disabled_layer.split('-')[1]) + 1))
-            if '-' in self.disabled_layer
-            else [int(x) for x in self.disabled_layer.split(',') if x]
-        )
-        self.normal_layer = (
-            list(range(int(self.normal_layer.split('-')[0]), int(self.normal_layer.split('-')[1]) + 1))
-            if '-' in self.normal_layer
-            else [int(x) for x in self.normal_layer.split(',') if x]
-        )
-
+        if isinstance(self.disabled_layer, str):
+            self.disabled_layer = (
+                list(range(int(self.disabled_layer.split('-')[0]), int(self.disabled_layer.split('-')[1]) + 1))
+                if '-' in self.disabled_layer
+                else [int(x) for x in self.disabled_layer.split(',') if x]
+            )
+        if isinstance(self.normal_layer, str):
+            self.normal_layer = (
+                list(range(int(self.normal_layer.split('-')[0]), int(self.normal_layer.split('-')[1]) + 1))
+                if '-' in self.normal_layer
+                else [int(x) for x in self.normal_layer.split(',') if x]
+            )
 @dataclass
 class AlgorithmConfig:
-    moetta: MoETTAConfig
-    eata: EATAConfig
-    tent: TentConfig
-    deyo: DeYOConfig
-    sar: SARConfig
-    cotta: CoTTAConfig
-    becotta: BECoTTAConfig
-    mgtta: MGTTAConfig
+    moetta: MoETTAConfig = field(default_factory=MoETTAConfig)
+    eata: EATAConfig = field(default_factory=EATAConfig)
+    tent: TentConfig = field(default_factory=TentConfig)
+    deyo: DeYOConfig = field(default_factory=DeYOConfig)
+    sar: SARConfig = field(default_factory=SARConfig)
+    cotta: CoTTAConfig = field(default_factory=CoTTAConfig)
+    becotta: BECoTTAConfig = field(default_factory=BECoTTAConfig)
+    mgtta: MGTTAConfig = field(default_factory=MGTTAConfig)
     algorithm: Literal[
         "tent", "eata", "deyo", "sar", "cotta", "mgtta", "becotta", "moetta", "noadapt"
     ] = "tent"
@@ -270,9 +249,13 @@ class TuneConfig:
 
 @dataclass
 class Config:
-    env: EnvironmentConfig
-    train: TrainingConfig
-    model: ModelConfig
-    data: DataConfig
-    algo: AlgorithmConfig
-    tune: TuneConfig
+    env: EnvironmentConfig = field(default_factory=EnvironmentConfig)
+    train: TrainingConfig = field(default_factory=TrainingConfig)
+    model: ModelConfig = field(default_factory=ModelConfig)
+    data: DataConfig = field(default_factory=DataConfig)
+    algo: AlgorithmConfig = field(default_factory=AlgorithmConfig)
+    tune: TuneConfig = field(default_factory=TuneConfig)
+
+
+base_config = Config()
+CONFIG["base"] = ("Base configuration", base_config)

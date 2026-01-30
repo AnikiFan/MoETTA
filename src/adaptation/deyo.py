@@ -17,7 +17,7 @@ from einops import rearrange
 import wandb
 
 from .moe_normalization import MoENormalizationLayer
-from ..config import Config
+from config import Config
 
 
 class DeYO(nn.Module):

@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-from .config import Config
+from config import Config
 
 
 def build_search_space(yaml_path):
@@ -94,7 +94,7 @@ def wandb_log(func):
             mode=config.env.wandb_mode,
             save_code=True,
             config_exclude_keys=list(dotenv_values(".env").keys())
-            + ["tune.search_space"],
+            + ["tune.search_space"], # exclude sensitive info and large files
         )
         wandb.run.log_code(Path(__file__).resolve().parent)
         if config.tune.search_space:

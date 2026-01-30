@@ -17,7 +17,7 @@ import wandb
 import numpy as np
 import math
 
-from ..config import Config
+from config import Config
 
 
 class SimpleAdapter(nn.Module):

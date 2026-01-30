@@ -8,7 +8,7 @@ import wandb
 from ..utils import set_nested_attr, softmax_entropy
 from .moe_normalization import MoENormalizationLayer
 from .router import MLPRouter
-from ..config import Config
+from config import Config
 
 
 class MoETTA(nn.Module):

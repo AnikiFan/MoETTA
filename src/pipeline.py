@@ -7,8 +7,8 @@ import ray.tune as tune
 from torch.utils.data import Subset
 import torch.nn as nn
 
-from .config import Config
-from .utils import (
+from config import Config
+from src.utils import (
     wandb_log,
     deterministic,
     show_config,
@@ -18,18 +18,18 @@ from .utils import (
     count_correct,
     get_logger,
 )
-from .adaptation import tent
-from .adaptation import eata
-from .adaptation import sar
-from .adaptation import deyo
-from .adaptation import cotta
-from .adaptation import mgtta
-from .adaptation import becotta
-from .adaptation.sam import SAM
-from .dataset.dataset import get_data, prepare_test_data
-from .adaptation.vpt import FOAViT
-from .adaptation.moetta import MoETTA
-from .adaptation.moe_normalization import switch_to_MoE
+from src.adaptation import tent
+from src.adaptation import eata
+from src.adaptation import sar
+from src.adaptation import deyo
+from src.adaptation import cotta
+from src.adaptation import mgtta
+from src.adaptation import becotta
+from src.adaptation.sam import SAM
+from src.dataset.dataset import get_data, prepare_test_data
+from src.adaptation.vpt import FOAViT
+from src.adaptation.moetta import MoETTA
+from src.adaptation.moe_normalization import switch_to_MoE
 
 
 @CumulativeTimer
@@ -218,7 +218,7 @@ def configure_model(config: Config):
                 weight_by_prob=config.algo.moetta.weight_by_prob,
                 weight_by_entropy=config.algo.moetta.weight_by_entropy,
                 randomness=config.algo.moetta.randomness,
-                shared_expert=config.algo.moetta.shared_expert,
+                activate_shared_expert=config.algo.moetta.activate_shared_expert,
                 route_penalty=config.algo.moetta.route_penalty,
                 decay=config.algo.moetta.decay,
                 self_router=config.algo.moetta.self_router,

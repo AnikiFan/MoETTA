@@ -4,8 +4,8 @@ import torch.nn.functional as F
 from typing import Callable, Tuple
 import wandb
 
-from ..config import Config
-from ..utils import set_nested_attr
+from config import Config
+from src.utils import set_nested_attr
 
 
 @torch.jit.script
@@ -117,7 +117,7 @@ class MoENormalizationLayer(nn.Module):
         self,
         idx: int,
         num_expert: int,
-        shared_expert: bool,
+        activate_shared_expert: bool,
         base_mod: nn.Module,
         randomness: float,
         self_router: bool = False,
@@ -140,9 +140,9 @@ class MoENormalizationLayer(nn.Module):
 
         # 从传入的 base_mod 提取基础参数
         self.weight = base_mod.weight
-        self.weight.requires_grad_(shared_expert)
+        self.weight.requires_grad_(activate_shared_expert)
         self.bias = base_mod.bias
-        self.bias.requires_grad_(shared_expert)
+        self.bias.requires_grad_(activate_shared_expert)
 
         # 初始化专家参数
         weight_shape = self.weight.shape
@@ -364,7 +364,7 @@ def switch_to_MoE(model, config: Config):
         new_mod = MoENormalizationLayer(
             idx=idx,
             num_expert=config.algo.moetta.num_expert,
-            shared_expert=config.algo.moetta.shared_expert,
+            activate_shared_expert=config.algo.moetta.activate_shared_expert,
             base_mod=mod,
             randomness=config.algo.moetta.randomness,
             self_router=True,

@@ -9,7 +9,6 @@ dependencies = [
     "jupyter>=1.1.1",
     "loguru>=0.7.3",
     "optuna>=4.6.0",
-    "pre-commit>=4.5.1",
     "python-dotenv>=1.2.1",
     "pyyaml>=6.0.3",
     "ray[tune]>=2.53.0",

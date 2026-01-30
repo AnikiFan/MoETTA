@@ -8,15 +8,14 @@ from dotenv import get_key
 from loguru import logger
 
 
-from src.config import Config
+from config import Config, CONFIG
 from src.pipeline import pipeline
 from src.utils import build_search_space, prefill_pipeline, timer
 
 
 @logger.catch()
 @timer
-def main():
-    config = tyro.cli(Config)
+def main(config:Config):
     if config.env.local:
         pipeline(config)
         return
@@ -70,4 +69,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    print(CONFIG.keys())
+    config = tyro.extras.overridable_config_cli(CONFIG)
+    main(config)
