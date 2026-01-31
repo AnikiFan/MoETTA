@@ -10,6 +10,7 @@ cd MoETTA
 # In case you haven't install uv, run following command if you are using Linux
 # curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync
+uv run ray start --head
 ```
 
 2. Create `.env` file under `MoETTA` directory.
@@ -25,10 +26,18 @@ WANDB_BASE_URL=<YOUR WANDB SERVER URL> # If you are not using wandb-local, then 
 ```base
 # Run an experiment locally, i.e., without ray
 uv run main.py base --env.local
+
 # Run an experiment with wandb offline
 uv run main.py base --env.wandb_mode offline
+
 # Run a hyper-parameter tuning/sweep by designating search space configuration
 uv run main.py base --tune.search_space /home/fx25/workspace/MoETTA/config/search_space/seed.yaml
+
+uv run main.py base --algo.algorithm eata
+
+uv run main.py base --algo.algorithm moetta
+
+uv run main.py base --algo.algorithm moetta --data.corruption potpourri+
 ```
 
 ## Add Configuration

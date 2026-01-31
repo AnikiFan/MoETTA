@@ -217,6 +217,7 @@ def configure_model(config: Config):
                 lb_coeff=config.algo.moetta.lb_coeff,
                 weight_by_prob=config.algo.moetta.weight_by_prob,
                 weight_by_entropy=config.algo.moetta.weight_by_entropy,
+                e_margin_coeff=config.algo.moetta.e_margin_coeff,
                 randomness=config.algo.moetta.randomness,
                 activate_shared_expert=config.algo.moetta.activate_shared_expert,
                 route_penalty=config.algo.moetta.route_penalty,

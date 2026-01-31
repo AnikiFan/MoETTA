@@ -192,10 +192,10 @@ class MoETTAConfig:
     log_matrix_step: int = 10000
     """Step interval for logging matrices."""
 
-    disabled_layer: str = ""
+    disabled_layer: str | list = "0-0"
     """Index of Normalization Layers that are not replaced by MoE-Normalization and keep frozen, e.g., "0,2,4" or "0-3"."""
 
-    normal_layer: str = ""
+    normal_layer: str | list = ""
     """Index of Normalization Layers that are not replaced by MoE-Normalization and keep activated, e.g., "0,2,4" or "0-3"."""
 
     pass_through_coeff: bool = True
@@ -203,6 +203,8 @@ class MoETTAConfig:
     dynamic_lb: bool = True
 
     global_router_idx: int = -1
+
+    e_margin_coeff: float = 0.4
 
     def __post_init__(self):
         if isinstance(self.disabled_layer, str):
@@ -244,7 +246,7 @@ class TuneConfig:
     scheduler: Literal["HyperBandScheduler"] = "HyperBandScheduler"
     search_algorithm: Literal["ax", "bayes", "optuna", "basic"] = "optuna"
     mode: Literal["min", "max"] = "max"
-    metric: str = "overall_accuracy"
+    metric: str = "overall_accuracy_1"
 
 
 @dataclass

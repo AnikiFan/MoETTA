@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch
 from typing import List, Callable
 import wandb
+import timm
 
 from ..utils import set_nested_attr, softmax_entropy
 from .moe_normalization import MoENormalizationLayer
@@ -28,7 +29,8 @@ class MoETTA(nn.Module):
         weight_by_prob: bool = True,
         weight_by_entropy: bool = True,
         randomness: float = 0,
-        shared_expert: bool = True,
+        e_margin_coeff: float = 0.4,
+        activate_shared_expert: bool = False,
         route_penalty: float = 0.0,
         decay: float = 0.0,
         self_router: bool = False,
@@ -71,7 +73,7 @@ class MoETTA(nn.Module):
         self.topk = topk
         self.weight_by_prob = weight_by_prob
         self.randomness = randomness
-        self.shared_expert = shared_expert
+        self.activate_shared_expert = activate_shared_expert
         self.dynamic_threshold = dynamic_threshold
         self.dynamic_lb = dynamic_lb
         self.weight_by_entropy = weight_by_entropy
@@ -88,6 +90,7 @@ class MoETTA(nn.Module):
         self.disabled_layer = disabled_layer
         self.normal_layer = normal_layer
         self.pass_through_coeff = pass_through_coeff
+        self.e_margin_coeff = e_margin_coeff
         self.criterion_mse = nn.MSELoss(reduction="none").cuda()
         self.global_router_idx = global_router_idx
         self.normal_layers = []
@@ -135,6 +138,8 @@ class MoETTA(nn.Module):
         for name, mod in self.model.named_modules():
             if not isinstance(mod, (nn.BatchNorm2d, nn.LayerNorm, nn.GroupNorm)):
                 continue
+            if isinstance(mod, timm.layers.norm.LayerNorm2d):
+                continue
             if idx in self.disabled_layer and idx in self.normal_layer:
                 raise ValueError(f"{idx} is both in disabled layer and normal layer")
             if idx in self.disabled_layer or idx < self.global_router_idx:
@@ -148,7 +153,7 @@ class MoETTA(nn.Module):
             new_mod = MoENormalizationLayer(
                 idx=idx,
                 num_expert=self.num_expert,
-                shared_expert=self.shared_expert,
+                activate_shared_expert=self.activate_shared_expert,
                 base_mod=mod,
                 randomness=self.randomness,
                 self_router=self.self_router,

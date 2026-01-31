@@ -1,5 +1,5 @@
 train.seed:
-  type: choices
+  type: choice
   values: 
     - 42
     - 4242

@@ -3,6 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 from typing import Callable, Tuple
 import wandb
+from loguru import logger
 
 from config import Config
 from src.utils import set_nested_attr
