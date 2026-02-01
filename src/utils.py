@@ -100,6 +100,7 @@ def wandb_log(func):
         if config.tune.search_space:
             wandb.run.log_code(config.tune.search_space)
         output = func(config, *args, **kwargs)
+        time.sleep(1) # ensure all logs are flushed
         wandb.finish()
         return output
 
@@ -144,7 +145,10 @@ def timer(func):
         end_time = time.perf_counter()
         duration = end_time - start_time
         logger.info(f"Function [{func.__name__}] cost: {duration:.4f} s")
-        wandb.summary[f"{func.__name__}_duration"] = duration
+        try:
+            wandb.summary[f"{func.__name__}_duration"] = duration
+        except Exception as e:
+            logger.warning(f"Failed to log duration to wandb: {e}")
         return result
 
     return wrapper

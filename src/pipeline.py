@@ -61,15 +61,16 @@ def validate(val_loader, model, config: Config):
             ),
             step=i,
         )
-        tune.report(
-            dict(
-                batch_accuracy_1=acc1 / images.shape[0],
-                batch_accuracy_5=acc5 / images.shape[0],
-                overall_accuracy_1=n_top1 / n_sample,
-                overall_accuracy_5=n_top5 / n_sample,
-                step=i,
+        if config.tune.search_space:
+            tune.report(
+                dict(
+                    batch_accuracy_1=acc1 / images.shape[0],
+                    batch_accuracy_5=acc5 / images.shape[0],
+                    overall_accuracy_1=n_top1 / n_sample,
+                    overall_accuracy_5=n_top5 / n_sample,
+                    step=i,
+                )
             )
-        )
 
     return n_top1 / n_sample
 

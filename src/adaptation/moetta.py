@@ -340,6 +340,7 @@ class MoETTA(nn.Module):
     def step_once(self):
         for mod in self.moe_layer:
             mod.step_once()
+        self.step += 1
 
     def get_params(self):
         params = []
