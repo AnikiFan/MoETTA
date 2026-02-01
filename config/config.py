@@ -17,6 +17,7 @@ class EnvironmentConfig:
     notes: str = ""
     job_type: Literal["train","test","debug", "pilot-exp"] = "train"
     wandb_mode: Literal["online", "offline", "disabled", "shared"] = "online"
+    # NOTE:Change them according to your environment!
     original_data_path: Path = Path("~/workspace/MoETTA/data/imagenet-1k_2012")
     sketch_data_path: Path = Path("~/workspace/MoETTA/data/imagenet-sketch/sketch")
     adv_data_path: Path = Path("~/workspace/MoETTA/data/imagenet-a")
@@ -96,10 +97,12 @@ class BECoTTAConfig:
 @dataclass
 class MGTTAConfig:
     lr: float = 3e-4
+    # NOTE:Change it according to your environment!
     mgg_path: Path = Path("~/workspace/MoETTA/artifacts/mgg_ckpt.pth")
     ttt_hidden_size: int = 8
     num_attention_heads: int = 1
     norm_dim: int = 768
+    # NOTE:Change it according to your environment!
     train_info_path: Path = Path("~/workspace/MoETTA/artifacts/train_info.pt")
 
 

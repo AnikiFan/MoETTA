@@ -21,6 +21,10 @@ WANDB_API_KEY=<YOUR WANDB API KEY>
 WANDB_BASE_URL=<YOUR WANDB SERVER URL> # If you are not using wandb-local, then fill it with `https://wandb.ai`
 ```
 
+3. Tailor the environment configuration to yours.
+
+The base configuration is located at `config/config.py`, where the configuration related to path needed to be changed according to your environment.
+
 ## Run Experiment
 
 ```base
@@ -50,4 +54,3 @@ To add a configuration, only two things need to be done:
 
 1. Add a configuration file into `config/subconfigs/`
 2. Import the added file into `config/__init__.py`
-
