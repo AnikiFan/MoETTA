@@ -18,7 +18,7 @@ uv run ray start --head
 ```bash
 RAY_ADDRESS=<YOUR RAY SERVER ADDRESS> # Get it by running `uv run ray start --head`
 WANDB_API_KEY=<YOUR WANDB API KEY>
-WANDB_BASE_URL=<YOUR WANDB SERVER URL> # If you are not using wandb-local, then fill it with `https://wandb.ai`
+WANDB_BASE_URL=<YOUR WANDB SERVER URL> # If you are not using wandb-local, then fill it with `https://api.wandb.ai`
 ```
 
 3. Tailor the environment configuration to yours.
