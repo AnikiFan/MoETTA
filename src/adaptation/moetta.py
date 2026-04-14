@@ -250,7 +250,13 @@ class MoETTA(nn.Module):
         wandb.log({"lb_coeff": self.lb_coeff}, step=self.step)
         entropy = entropy[entropy <= self.threshold]
         coeff = (
-            1 / (torch.exp(entropy.detach() - self.e_margin_coeff * math.log(1000)))
+            1
+            / (
+                torch.exp(
+                    entropy.detach()
+                    - self.e_margin_coeff * math.log(self.config.data.num_class)
+                )
+            )
             if self.weight_by_entropy
             else 1
         )

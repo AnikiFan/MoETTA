@@ -247,7 +247,7 @@ def count_correct(output, target, topk=(1,)):
     Returns:
         A list with the number of correct predictions for each k in topk.
     """
-    maxk = max(topk)
+    maxk = min(max(topk), output.shape[1])
 
     # topk: get top maxk predicted classes for each sample
     _, indices = output.topk(
@@ -258,6 +258,7 @@ def count_correct(output, target, topk=(1,)):
 
     res = []
     for k in topk:
+        k = min(k, output.shape[1])
         correct_k = correct[:k].reshape(-1).float().sum(0)  # count of correct top-k
         res.append(int(correct_k.item()))  # return as int
     return res

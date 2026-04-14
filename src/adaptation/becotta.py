@@ -238,7 +238,9 @@ class MoEBlock(nn.Module):
 
 
 class BECoTTA(nn.Module):
-    def __init__(self, model, optimizer, steps=1, episodic=False, thr_coeff=0.4):
+    def __init__(
+        self, model, optimizer, steps=1, episodic=False, thr_coeff=0.4, num_classes=1000
+    ):
         super().__init__()
         self.model = model
         self.optimizer = optimizer
@@ -246,13 +248,14 @@ class BECoTTA(nn.Module):
         assert steps > 0
         self.episodic = episodic
         self.thr_coeff = thr_coeff
+        self.num_classes = num_classes
         self.forward_cnt = 0
 
     def forward(self, x, y=None):
         if self.steps > 0:
             for _ in range(self.steps):
                 outputs, cnt = forward_and_adapt(
-                    x, self.model, self.optimizer, self.thr_coeff
+                    x, self.model, self.optimizer, self.thr_coeff, self.num_classes
                 )
             self.forward_cnt += cnt
             if wandb.run is not None and wandb.run.summary is not None:
@@ -274,7 +277,7 @@ def softmax_entropy(x: torch.Tensor) -> torch.Tensor:
 
 
 @torch.enable_grad()  # ensure grads in possible no grad context for testing
-def forward_and_adapt(x, model, optimizer, thr_coeff):
+def forward_and_adapt(x, model, optimizer, thr_coeff, num_classes):
     """Forward and adapt model on batch of data.
     Measure entropy of the model prediction, take gradients, and update params.
     """
@@ -282,7 +285,7 @@ def forward_and_adapt(x, model, optimizer, thr_coeff):
     outputs = model(x)
     # adapt
     entropys = softmax_entropy(outputs)
-    idx = entropys < thr_coeff * math.log(1000)
+    idx = entropys < thr_coeff * math.log(num_classes)
     forward_cnt = idx.sum().item()
     loss = entropys[idx].mean(0)
     loss.backward()

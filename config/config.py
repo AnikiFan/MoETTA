@@ -23,6 +23,10 @@ class EnvironmentConfig:
     adv_data_path: Path = Path("~/workspace/MoETTA/data/imagenet-a")
     corruption_data_path: Path = Path("~/workspace/MoETTA/data/imagenet-c")
     rendition_data_path: Path = Path("~/workspace/MoETTA/data/imagenet-r")
+    cifar10_data_path: Path = Path("~/workspace/MoETTA/data/cifar10")
+    cifar100_data_path: Path = Path("~/workspace/MoETTA/data/cifar100")
+    cifar10_c_path: Path = Path("~/workspace/MoETTA/data/CIFAR-10-C")
+    cifar100_c_path: Path = Path("~/workspace/MoETTA/data/CIFAR-100-C")
 
 @dataclass
 class TrainingConfig:
@@ -44,10 +48,14 @@ class ModelConfig:
         "swin_base_patch4_window7_224",
         "convnext_base",
     ] = "vit_base_patch16_224"
+    pretrained: bool = True
+    checkpoint_path: Path = Path("")
+    hf_repo_id: str = ""
 
 
 @dataclass
 class DataConfig:
+    dataset: Literal["auto", "imagenet", "cifar10", "cifar100"] = "auto"
     num_class: int = 1000
     used_data_num: int = -1  # -1 means to use all the data
     shuffle: bool = True
@@ -83,6 +91,24 @@ class DataConfig:
         "cifar10-c",
         "cifar100-c",
     ] = "imagenet_c_test_mix"
+
+    def __post_init__(self):
+        corruption_to_dataset = {
+            "cifar10-c": "cifar10",
+            "cifar100-c": "cifar100",
+        }
+        inferred_dataset = corruption_to_dataset.get(self.corruption, "imagenet")
+        if self.dataset != "auto" and self.dataset != inferred_dataset and self.corruption in corruption_to_dataset:
+            raise ValueError(
+                f"Dataset `{self.dataset}` does not match corruption `{self.corruption}`."
+            )
+
+        effective_dataset = inferred_dataset if self.dataset == "auto" else self.dataset
+        if self.num_class == 1000:
+            if effective_dataset == "cifar10":
+                self.num_class = 10
+            elif effective_dataset == "cifar100":
+                self.num_class = 100
 
 
 @dataclass

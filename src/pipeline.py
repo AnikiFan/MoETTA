@@ -1,11 +1,13 @@
+from pathlib import Path
+
 import torch
-import timm
 import math
 from tqdm import tqdm
 import wandb
 import ray.tune as tune
 from torch.utils.data import Subset
 import torch.nn as nn
+from loguru import logger
 
 from config import Config
 from src.utils import (
@@ -30,6 +32,44 @@ from src.dataset.dataset import get_data, prepare_test_data
 from src.adaptation.vpt import FOAViT
 from src.adaptation.moetta import MoETTA
 from src.adaptation.moe_normalization import switch_to_MoE
+from src.model_utils import (
+    adapt_model_to_state_dict,
+    create_model_from_config,
+    load_state_dict_file,
+    resolve_model_name,
+)
+
+
+def load_checkpoint(model, checkpoint_path: Path):
+    state_dict = load_state_dict_file(checkpoint_path)
+    model = adapt_model_to_state_dict(model, state_dict)
+    incompatible = model.load_state_dict(state_dict, strict=False)
+    logger.info(
+        "Loaded checkpoint {} with {} missing keys and {} unexpected keys",
+        checkpoint_path,
+        len(incompatible.missing_keys),
+        len(incompatible.unexpected_keys),
+    )
+    return model
+
+
+def build_model(config: Config):
+    net = create_model_from_config(config)
+    if config.model.checkpoint_path != Path(""):
+        net = load_checkpoint(net, config.model.checkpoint_path)
+    elif config.model.hf_repo_id and config.model.pretrained:
+        logger.info(
+            "Loaded pretrained weights automatically from Hugging Face repo {}",
+            config.model.hf_repo_id,
+        )
+    elif config.data.num_class != 1000:
+        logger.warning(
+            "Building {} with num_classes={} but no checkpoint_path or hf_repo_id was provided. "
+            "The classifier head may remain randomly initialized.",
+            resolve_model_name(config),
+            config.data.num_class,
+        )
+    return net
 
 
 @CumulativeTimer
@@ -76,7 +116,7 @@ def validate(val_loader, model, config: Config):
 
 
 def configure_model(config: Config):
-    net = timm.create_model(config.model.model, pretrained=True)
+    net = build_model(config)
     net = net.cuda()
     net.eval()
     net.requires_grad_(False)
@@ -204,7 +244,9 @@ def configure_model(config: Config):
             optimizer = torch.optim.Adam(
                 params, config.algo.becotta.lr, betas=(0.9, 0.999)
             )
-            adapt_model = becotta.BECoTTA(net, optimizer)
+            adapt_model = becotta.BECoTTA(
+                net, optimizer, thr_coeff=0.4, num_classes=config.data.num_class
+            )
         case "noadapt":
             adapt_model = net
         case "moetta":
